@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Mobile-Responsive Dedication Tracker</title>
+    <title>Dedication Trend Tracker</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
@@ -15,85 +15,72 @@
         }
 
         body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
             background-color: var(--bg);
             margin: 0;
-            padding: 10px;
-            color: #2d3436;
+            padding: 20px;
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1300px;
             margin: 0 auto;
             background: white;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
-            border: 4px solid var(--primary);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 5px solid var(--primary);
         }
 
-        /* Responsive Stats Bar */
+        /* Stats Bar */
         .stats-bar {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
+            display: flex;
+            justify-content: space-around;
             background: var(--primary);
             color: white;
-            padding: 15px;
+            padding: 20px;
             border-radius: 10px;
-            margin-bottom: 20px;
-            text-align: center;
+            margin-bottom: 25px;
         }
 
-        .stat-item h3 { margin: 0; font-size: 1.2rem; }
-        .stat-item span { font-size: 0.65rem; opacity: 0.9; text-transform: uppercase; display: block; }
+        .stat-item { text-align: center; }
+        .stat-item h3 { margin: 0; font-size: 1.8rem; }
+        .stat-item span { font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; }
 
-        /* Responsive Controls */
+        /* Form Controls */
         .controls {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: #f8f9fa;
-            padding: 15px;
-            border-radius: 8px;
-        }
-
-        .input-row {
             display: grid;
-            grid-template-columns: 1fr 1fr;
+            grid-template-columns: 1fr 1fr 2fr auto auto;
             gap: 10px;
+            margin-bottom: 25px;
         }
 
         input, select, button {
             padding: 12px;
             border: 1px solid var(--grid-line);
             border-radius: 6px;
-            font-size: 16px; /* Prevents iOS auto-zoom on focus */
         }
 
-        .btn-add { background: var(--primary); color: white; border: none; font-weight: bold; cursor: pointer; }
+        .btn-add { background: var(--primary); color: white; border: none; cursor: pointer; }
         .btn-clear { background: #636e72; color: white; border: none; cursor: pointer; }
 
-        /* Mobile-Friendly Table */
+        /* Main Grid Table */
         .table-wrapper {
             overflow-x: auto;
-            margin-bottom: 30px;
+            margin-bottom: 40px;
             border: 1px solid var(--grid-line);
-            border-radius: 8px;
-            -webkit-overflow-scrolling: touch; /* Smooth scroll for iOS */
         }
 
-        table { border-collapse: collapse; min-width: 1000px; width: 100%; }
-        th, td { border: 1px solid var(--grid-line); text-align: center; height: 45px; }
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid var(--grid-line); text-align: center; min-width: 45px; height: 40px; }
 
         .task-name {
-            min-width: 150px;
+            min-width: 200px;
             text-align: left;
-            padding: 0 10px;
-            background: #fff;
+            padding: 0 15px;
+            background: #f8f9fa;
             position: sticky;
             left: 0;
-            z-index: 10;
+            z-index: 5;
             font-weight: bold;
             border-right: 2px solid var(--primary);
         }
@@ -103,66 +90,57 @@
             height: 100%;
             border: none;
             background: transparent;
-            font-size: 14px;
+            cursor: pointer;
             text-align: center;
+            font-weight: bold;
         }
 
-        .cell-done { background-color: #d1f7e1 !important; }
-        .cell-missed { background-color: #ffdce0 !important; }
+        /* Color States */
+        .cell-done { background-color: #d1f7e1 !important; color: #1b5e20; }
+        .cell-missed { background-color: #ffdce0 !important; color: #b71c1c; }
 
         /* Chart Section */
         .chart-section {
-            padding: 10px;
             background: #fff;
-            border-radius: 10px;
+            padding: 20px;
+            border-radius: 12px;
             border: 1px solid var(--grid-line);
         }
 
-        canvas { width: 100% !important; height: auto !important; }
-
-        /* Desktop Adjustments */
-        @media (min-width: 768px) {
-            body { padding: 30px; }
-            .controls { flex-direction: row; align-items: center; }
-            .input-row { display: flex; flex-grow: 1; }
-            .stat-item h3 { font-size: 1.8rem; }
-            .container { padding: 25px; }
-        }
+        h2 { color: var(--primary); margin-top: 0; }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <h1 style="text-align:center; font-size: 1.5rem;">Daily Dedication Plotter</h1>
+    <h1 style="text-align:center">Performance & Dedication Plotter</h1>
 
     <div class="stats-bar">
-        <div class="stat-item"><h3 id="scoreVal">0%</h3><span>Score</span></div>
-        <div class="stat-item"><h3 id="bestDay">-</h3><span>Best Day</span></div>
-        <div class="stat-item"><h3 id="totalWins">0</h3><span>Wins</span></div>
+        <div class="stat-item"><h3 id="scoreVal">0%</h3><span>Dedication Score</span></div>
+        <div class="stat-item"><h3 id="bestDay">-</h3><span>Most Productive Day</span></div>
+        <div class="stat-item"><h3 id="streakVal">0</h3><span>Total Wins</span></div>
     </div>
 
     <div class="controls">
-        <div class="input-row">
-            <select id="monthSelect"></select>
-            <select id="yearSelect"></select>
-        </div>
-        <input type="text" id="taskInput" placeholder="New task name..." style="flex-grow: 2;">
+        <select id="monthSelect"></select>
+        <select id="yearSelect"></select>
+        <input type="text" id="taskInput" placeholder="Enter task name...">
         <button class="btn-add" onclick="addTask()">Add Task</button>
-        <button class="btn-clear" onclick="clearMonth()">Clear</button>
+        <button class="btn-clear" onclick="clearMonth()">Clear Month</button>
     </div>
 
     <div class="table-wrapper">
         <table>
             <thead>
-                <tr id="headerRow"><th class="task-name">Activities</th></tr>
+                <tr id="headerRow"><th class="task-name">Monthly Activities</th></tr>
             </thead>
             <tbody id="taskBody"></tbody>
         </table>
     </div>
 
     <div class="chart-section">
-        <h3 style="margin-top:0">Dedication Trend (Monthly Plot)</h3>
-        <canvas id="trendChart"></canvas>
+        <h2>Dedication Plotting (Daily Progress)</h2>
+        <canvas id="trendChart" height="100"></canvas>
     </div>
 </div>
 
@@ -171,10 +149,10 @@
     let lineChart = null;
     const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
+    // Setup Selectors
     const mSelect = document.getElementById('monthSelect');
     const ySelect = document.getElementById('yearSelect');
 
-    // Populate selectors
     months.forEach((m, i) => mSelect.innerHTML += `<option value="${i}">${m}</option>`);
     const currY = new Date().getFullYear();
     for(let i=currY-1; i<=currY+2; i++) ySelect.innerHTML += `<option value="${i}" ${i===currY?'selected':''}>${i}</option>`;
@@ -182,7 +160,7 @@
     mSelect.value = new Date().getMonth();
     mSelect.onchange = ySelect.onchange = loadData;
 
-    function getStoreKey() { return `plot_v3_${ySelect.value}_${mSelect.value}`; }
+    function getStoreKey() { return `plot_tracker_${ySelect.value}_${mSelect.value}`; }
     function getDays() { return new Date(ySelect.value, parseInt(mSelect.value)+1, 0).getDate(); }
 
     function loadData() {
@@ -208,11 +186,7 @@
             const tr = document.createElement('tr');
             const nameTd = document.createElement('td');
             nameTd.className = 'task-name';
-            nameTd.innerHTML = `
-                <div style="display:flex; justify-content:space-between; align-items:center;">
-                    <span style="font-size:13px">${task.name}</span>
-                    <button onclick="deleteTask(${tIdx})" style="border:none; background:none; color:red; font-weight:bold; padding:5px;">×</button>
-                </div>`;
+            nameTd.innerHTML = `${task.name} <button onclick="deleteTask(${tIdx})" style="float:right; border:none; background:none; color:red; cursor:pointer;">×</button>`;
             tr.appendChild(nameTd);
 
             for(let d=0; d<days; d++) {
@@ -237,7 +211,8 @@
     function updateCell(tIdx, dIdx, val) {
         tasks[tIdx].data[dIdx] = val;
         save();
-        render(); // Refresh colors
+        updateAnalytics();
+        render(); // Update colors
     }
 
     function addTask() {
@@ -250,15 +225,13 @@
     }
 
     function deleteTask(idx) {
-        if(confirm("Delete this task?")) {
-            tasks.splice(idx, 1);
-            save();
-            render();
-        }
+        tasks.splice(idx, 1);
+        save();
+        render();
     }
 
     function clearMonth() {
-        if(confirm("Clear this entire month?")) {
+        if(confirm("Clear this month?")) {
             localStorage.removeItem(getStoreKey());
             loadData();
         }
@@ -273,18 +246,25 @@
         let totalPossible = tasks.length * totalDays;
 
         tasks.forEach(task => {
-            task.data.forEach((status, dIdx) => {
-                if(status === 'done') { dailyCounts[dIdx]++; totalDone++; }
+            task.data.forEach((status, dayIdx) => {
+                if(status === 'done') {
+                    dailyCounts[dayIdx]++;
+                    totalDone++;
+                }
             });
         });
 
+        // Update Score
         const score = totalPossible === 0 ? 0 : Math.round((totalDone / totalPossible) * 100);
         document.getElementById('scoreVal').innerText = score + "%";
-        document.getElementById('totalWins').innerText = totalDone;
+        document.getElementById('streakVal').innerText = totalDone;
 
+        // Find Best Day
         const maxVal = Math.max(...dailyCounts);
-        document.getElementById('bestDay').innerText = maxVal > 0 ? `Day ${dailyCounts.indexOf(maxVal)+1}` : "-";
+        const bestDayIdx = dailyCounts.indexOf(maxVal);
+        document.getElementById('bestDay').innerText = maxVal > 0 ? `Day ${bestDayIdx + 1}` : "-";
 
+        // Update Line Plotting
         const ctx = document.getElementById('trendChart').getContext('2d');
         if(lineChart) lineChart.destroy();
         
@@ -293,20 +273,21 @@
             data: {
                 labels: Array.from({length: totalDays}, (_, i) => i + 1),
                 datasets: [{
-                    label: 'Plotting Wins',
+                    label: 'Tasks Completed',
                     data: dailyCounts,
                     borderColor: '#4834d4',
                     backgroundColor: 'rgba(72, 52, 212, 0.1)',
                     fill: true,
-                    tension: 0.3,
-                    pointRadius: window.innerWidth < 768 ? 2 : 4
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#4834d4'
                 }]
             },
             options: {
                 responsive: true,
                 scales: {
-                    y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                    x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 10 } }
+                    y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Number of Tasks' } },
+                    x: { title: { display: true, text: 'Day of the Month' } }
                 }
             }
         });
