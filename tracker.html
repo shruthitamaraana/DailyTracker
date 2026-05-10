@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dedication Trend Tracker</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #4834d4;
+            --success: #2ecc71;
+            --danger: #eb4d4b;
+            --bg: #f0f2f5;
+            --grid-line: #dfe6e9;
+        }
+
+        body {
+            font-family: 'Segoe UI', sans-serif;
+            background-color: var(--bg);
+            margin: 0;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            border: 5px solid var(--primary);
+        }
+
+        /* Stats Bar */
+        .stats-bar {
+            display: flex;
+            justify-content: space-around;
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 25px;
+        }
+
+        .stat-item { text-align: center; }
+        .stat-item h3 { margin: 0; font-size: 1.8rem; }
+        .stat-item span { font-size: 0.8rem; opacity: 0.8; text-transform: uppercase; }
+
+        /* Form Controls */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr 2fr auto auto;
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        input, select, button {
+            padding: 12px;
+            border: 1px solid var(--grid-line);
+            border-radius: 6px;
+        }
+
+        .btn-add { background: var(--primary); color: white; border: none; cursor: pointer; }
+        .btn-clear { background: #636e72; color: white; border: none; cursor: pointer; }
+
+        /* Main Grid Table */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-bottom: 40px;
+            border: 1px solid var(--grid-line);
+        }
+
+        table { width: 100%; border-collapse: collapse; background: #fff; }
+        th, td { border: 1px solid var(--grid-line); text-align: center; min-width: 45px; height: 40px; }
+
+        .task-name {
+            min-width: 200px;
+            text-align: left;
+            padding: 0 15px;
+            background: #f8f9fa;
+            position: sticky;
+            left: 0;
+            z-index: 5;
+            font-weight: bold;
+            border-right: 2px solid var(--primary);
+        }
+
+        .status-select {
+            width: 100%;
+            height: 100%;
+            border: none;
+            background: transparent;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        /* Color States */
+        .cell-done { background-color: #d1f7e1 !important; color: #1b5e20; }
+        .cell-missed { background-color: #ffdce0 !important; color: #b71c1c; }
+
+        /* Chart Section */
+        .chart-section {
+            background: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid var(--grid-line);
+        }
+
+        h2 { color: var(--primary); margin-top: 0; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1 style="text-align:center">Performance & Dedication Plotter</h1>
+
+    <div class="stats-bar">
+        <div class="stat-item"><h3 id="scoreVal">0%</h3><span>Dedication Score</span></div>
+        <div class="stat-item"><h3 id="bestDay">-</h3><span>Most Productive Day</span></div>
+        <div class="stat-item"><h3 id="streakVal">0</h3><span>Total Wins</span></div>
+    </div>
+
+    <div class="controls">
+        <select id="monthSelect"></select>
+        <select id="yearSelect"></select>
+        <input type="text" id="taskInput" placeholder="Enter task name...">
+        <button class="btn-add" onclick="addTask()">Add Task</button>
+        <button class="btn-clear" onclick="clearMonth()">Clear Month</button>
+    </div>
+
+    <div class="table-wrapper">
+        <table>
+            <thead>
+                <tr id="headerRow"><th class="task-name">Monthly Activities</th></tr>
+            </thead>
+            <tbody id="taskBody"></tbody>
+        </table>
+    </div>
+
+    <div class="chart-section">
+        <h2>Dedication Plotting (Daily Progress)</h2>
+        <canvas id="trendChart" height="100"></canvas>
+    </div>
+</div>
+
+<script>
+    let tasks = [];
+    let lineChart = null;
+    const months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+    // Setup Selectors
+    const mSelect = document.getElementById('monthSelect');
+    const ySelect = document.getElementById('yearSelect');
+
+    months.forEach((m, i) => mSelect.innerHTML += `<option value="${i}">${m}</option>`);
+    const currY = new Date().getFullYear();
+    for(let i=currY-1; i<=currY+2; i++) ySelect.innerHTML += `<option value="${i}" ${i===currY?'selected':''}>${i}</option>`;
+    
+    mSelect.value = new Date().getMonth();
+    mSelect.onchange = ySelect.onchange = loadData;
+
+    function getStoreKey() { return `plot_tracker_${ySelect.value}_${mSelect.value}`; }
+    function getDays() { return new Date(ySelect.value, parseInt(mSelect.value)+1, 0).getDate(); }
+
+    function loadData() {
+        const saved = localStorage.getItem(getStoreKey());
+        tasks = saved ? JSON.parse(saved) : [];
+        render();
+    }
+
+    function render() {
+        const days = getDays();
+        const hr = document.getElementById('headerRow');
+        while(hr.cells.length > 1) hr.deleteCell(1);
+        for(let i=1; i<=days; i++) {
+            let th = document.createElement('th');
+            th.innerText = i;
+            hr.appendChild(th);
+        }
+
+        const tbody = document.getElementById('taskBody');
+        tbody.innerHTML = '';
+
+        tasks.forEach((task, tIdx) => {
+            const tr = document.createElement('tr');
+            const nameTd = document.createElement('td');
+            nameTd.className = 'task-name';
+            nameTd.innerHTML = `${task.name} <button onclick="deleteTask(${tIdx})" style="float:right; border:none; background:none; color:red; cursor:pointer;">×</button>`;
+            tr.appendChild(nameTd);
+
+            for(let d=0; d<days; d++) {
+                const td = document.createElement('td');
+                const val = task.data[d] || 'none';
+                if(val === 'done') td.className = 'cell-done';
+                if(val === 'miss') td.className = 'cell-missed';
+
+                td.innerHTML = `
+                    <select class="status-select" onchange="updateCell(${tIdx}, ${d}, this.value)">
+                        <option value="none" ${val==='none'?'selected':''}>-</option>
+                        <option value="done" ${val==='done'?'selected':''}>✓</option>
+                        <option value="miss" ${val==='miss'?'selected':''}>×</option>
+                    </select>`;
+                tr.appendChild(td);
+            }
+            tbody.appendChild(tr);
+        });
+        updateAnalytics();
+    }
+
+    function updateCell(tIdx, dIdx, val) {
+        tasks[tIdx].data[dIdx] = val;
+        save();
+        updateAnalytics();
+        render(); // Update colors
+    }
+
+    function addTask() {
+        const input = document.getElementById('taskInput');
+        if(!input.value) return;
+        tasks.push({ name: input.value, data: new Array(getDays()).fill('none') });
+        input.value = '';
+        save();
+        render();
+    }
+
+    function deleteTask(idx) {
+        tasks.splice(idx, 1);
+        save();
+        render();
+    }
+
+    function clearMonth() {
+        if(confirm("Clear this month?")) {
+            localStorage.removeItem(getStoreKey());
+            loadData();
+        }
+    }
+
+    function save() { localStorage.setItem(getStoreKey(), JSON.stringify(tasks)); }
+
+    function updateAnalytics() {
+        const totalDays = getDays();
+        let dailyCounts = new Array(totalDays).fill(0);
+        let totalDone = 0;
+        let totalPossible = tasks.length * totalDays;
+
+        tasks.forEach(task => {
+            task.data.forEach((status, dayIdx) => {
+                if(status === 'done') {
+                    dailyCounts[dayIdx]++;
+                    totalDone++;
+                }
+            });
+        });
+
+        // Update Score
+        const score = totalPossible === 0 ? 0 : Math.round((totalDone / totalPossible) * 100);
+        document.getElementById('scoreVal').innerText = score + "%";
+        document.getElementById('streakVal').innerText = totalDone;
+
+        // Find Best Day
+        const maxVal = Math.max(...dailyCounts);
+        const bestDayIdx = dailyCounts.indexOf(maxVal);
+        document.getElementById('bestDay').innerText = maxVal > 0 ? `Day ${bestDayIdx + 1}` : "-";
+
+        // Update Line Plotting
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        if(lineChart) lineChart.destroy();
+        
+        lineChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: totalDays}, (_, i) => i + 1),
+                datasets: [{
+                    label: 'Tasks Completed',
+                    data: dailyCounts,
+                    borderColor: '#4834d4',
+                    backgroundColor: 'rgba(72, 52, 212, 0.1)',
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 5,
+                    pointBackgroundColor: '#4834d4'
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true, stepSize: 1, title: { display: true, text: 'Number of Tasks' } },
+                    x: { title: { display: true, text: 'Day of the Month' } }
+                }
+            }
+        });
+    }
+
+    loadData();
+</script>
+</body>
+</html>
